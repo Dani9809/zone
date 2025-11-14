@@ -5,19 +5,18 @@
       "src": "package.json",
       "use": "@vercel/static-build",
       "config": {
-        "buildCommand": "npm run build:client",
-        "outputDir": "dist/spa"
+        "distDir": "dist/spa"
       }
     },
     {
-      "src": "api/index.ts",
+      "src": "server/index.ts",
       "use": "@vercel/node"
     }
   ],
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/index.ts"
+      "destination": "/server/index.ts"
     },
     {
       "source": "/(.*)",
