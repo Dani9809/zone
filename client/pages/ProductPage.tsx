@@ -27,16 +27,20 @@ export default function ProductPage() {
     queryKey: ["product", id],
     queryFn: () => fetchProductDetail(id!),
     enabled: !!id, // Only run the query if id is present
+
+    
   });
 
   // 4. Handle the "Buy" button click
   const handleBuyOnPrintful = () => {
-    if (selectedSize && product?.external_url) {
-      // 5. Redirect to the actual Printful URL
-      window.open(product.external_url, "_blank");
-    }else if (!selectedSize) {
-      // Optional: A little alert if they somehow click it
-      alert("Please select a size first.");
+    // This button is for you, the store owner, to process the order.
+    // This will redirect to the "New Order" page in your Printful dashboard.
+    if (selectedSize) {
+      const printfulOrderUrl = `https://www.printful.com/dashboard/orders/new`;
+      window.open(printfulOrderUrl, "_blank");
+    } else {
+      // This will just ensure the check still runs
+      console.log("Please select a size.");
     }
   };
 

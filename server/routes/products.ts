@@ -138,19 +138,31 @@ export const handleGetProductById: RequestHandler = async (req, res) => {
     const data: { result: PrintfulDetailedSyncProduct } = await response.json();
     const { sync_product, sync_variants } = data.result;
 
+    // --- NEW ROBUST LOGIC FOR URL ---
+    // Try to find the URL on the first variant, then on the main product,
+    // then fall back to an empty string.
+    const productUrl = sync_variants[0]?.external_url || sync_product.external_url || "";
+    
+    if (!productUrl) {
+      // This will log in your VS Code terminal if no URL is found
+      console.warn(`WARN: No external_url found for product ID ${id}. Button will not work.`);
+    }
+    // --- END NEW LOGIC ---
+
     // Map to our detailed ProductDetail interface
     const productDetail: ProductDetail = {
       id: sync_product.id.toString(),
       name: sync_product.name,
       price: sync_variants[0]?.retail_price || "0.00",
-      image: sync_product.thumbnail_url, // You might want to find a larger image if available
-      fullDescription: `This premium, on-demand "${sync_product.name}" is crafted just for you.`, // Printful doesn't provide a long description
-      category: "Apparel", // Mocked
+      image: sync_product.thumbnail_url,
+      fullDescription: `This premium, on-demand "${sync_product.name}" is crafted just for you.`,
+      category: "Apparel",
       rating: 4.5, // Mocked
       reviews: 100, // Mocked
-      specifications: sync_variants.map(v => v.name), // Using variant names as "specifications"
-      sizes: sync_variants.map(v => v.name), // e.g., "S", "M", "L"
-      external_url: sync_product.external_url, // The direct link to the product
+      specifications: sync_variants.map(v => v.name),
+      sizes: sync_variants.map(v => v.name),
+      // THE FIX IS HERE: Use the 'external_url' from the FIRST VARIANT
+      external_url: sync_variants[0]?.external_url || "", 
     };
 
     res.status(200).json(productDetail);
