@@ -2,6 +2,8 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
+// 1. Import both handlers
+import { handleGetProducts, handleGetProductById } from "./routes/products";
 
 export function createServer() {
   const app = express();
@@ -18,6 +20,10 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+
+  // 2. Add your product routes
+  app.get("/api/products", handleGetProducts);
+  app.get("/api/products/:id", handleGetProductById);
 
   return app;
 }

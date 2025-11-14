@@ -1,74 +1,20 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { ChevronLeft, ShoppingCart, Star } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ProductDetail } from "@shared/api"; // Import our new type
+import { Skeleton } from "@/components/ui/skeleton"; // Import Skeleton
 
-const PRODUCTS: Record<string, any> = {
-  "1": {
-    id: "1",
-    name: "Dream Big Hoodie",
-    price: 49.99,
-    image:
-      "https://images.unsplash.com/photo-1556821840-bf63daf1001d?w=800&h=800&fit=crop",
-    description:
-      "Premium comfort hoodie with an inspiring message. Perfect for daily wear and motivation.",
-    category: "Apparel",
-    rating: 4.8,
-    reviews: 128,
-    fullDescription:
-      "This premium hoodie is crafted from 100% organic cotton with a soft fleece lining. The 'Dream Big' message is screen-printed with eco-friendly ink, making it both comfortable and sustainable. Perfect for motivation on chilly days.",
-    specifications: [
-      "100% Organic Cotton",
-      "Fleece Lining",
-      "Eco-friendly Ink",
-      "Machine Washable",
-      "Available in 5 colors",
-    ],
-  },
-  "2": {
-    id: "2",
-    name: "Limitless T-Shirt",
-    price: 34.99,
-    image:
-      "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=800&h=800&fit=crop",
-    description:
-      "Timeless classic tee made from sustainable materials. Express your limitless potential.",
-    category: "Apparel",
-    rating: 4.6,
-    reviews: 94,
-    fullDescription:
-      "A versatile classic tee made from 100% organic cotton. The minimalist 'Limitless' design makes it perfect for everyday wear, gym sessions, or layering. Available in multiple colors.",
-    specifications: [
-      "100% Organic Cotton",
-      "Breathable Fabric",
-      "Eco-friendly Dye",
-      "Unisex Fit",
-      "Available in 8 colors",
-    ],
-  },
-  "3": {
-    id: "3",
-    name: "Achieve Cap",
-    price: 29.99,
-    image:
-      "https://images.unsplash.com/photo-1559027615-cd2628902d4a?w=800&h=800&fit=crop",
-    description:
-      "Sleek and modern cap to keep you focused on your goals. Weather any season.",
-    category: "Accessories",
-    rating: 4.7,
-    reviews: 67,
-    fullDescription:
-      "This modern cap features an adjustable back and breathable mesh panels. The embroidered 'Achieve' logo is perfect for making a statement. Weather-resistant and perfect for any season.",
-    specifications: [
-      "Cotton + Polyester Blend",
-      "Adjustable Back",
-      "Breathable Mesh",
-      "Embroidered Logo",
-      "One Size Fits All",
-    ],
-  },
+// 1. Remove the hardcoded PRODUCTS and SIZES constants
+
+// 2. Define the fetcher function
+const fetchProductDetail = async (id: string): Promise<ProductDetail> => {
+  const response = await fetch(`/api/products/${id}`);
+  if (!response.ok) {
+    throw new Error("Failed to fetch product details from the server.");
+  }
+  return response.json();
 };
-
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 
 export default function ProductPage() {
   const { id } = useParams<{ id: string }>();
@@ -76,9 +22,52 @@ export default function ProductPage() {
   const [selectedSize, setSelectedSize] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
 
-  const product = id && PRODUCTS[id];
+  // 3. Use useQuery to fetch the product data
+  const { data: product, isLoading, error } = useQuery<ProductDetail>({
+    queryKey: ["product", id],
+    queryFn: () => fetchProductDetail(id!),
+    enabled: !!id, // Only run the query if id is present
+  });
 
-  if (!product) {
+  // 4. Handle the "Buy" button click
+  const handleBuyOnPrintful = () => {
+    if (selectedSize && product?.external_url) {
+      // 5. Redirect to the actual Printful URL
+      window.open(product.external_url, "_blank");
+    }else if (!selectedSize) {
+      // Optional: A little alert if they somehow click it
+      alert("Please select a size first.");
+    }
+  };
+
+  // 6. Handle Loading state
+  if (isLoading) {
+    return (
+      <main className="min-h-screen bg-background py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <Skeleton className="h-6 w-32 mb-8" />
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            <Skeleton className="w-full aspect-square rounded-lg" />
+            <div className="space-y-6">
+              <Skeleton className="h-6 w-1/4" />
+              <Skeleton className="h-12 w-3/4" />
+              <Skeleton className="h-6 w-1/3" />
+              <Skeleton className="h-10 w-1/2" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-10 w-1/2" />
+              <div className="flex gap-4">
+                <Skeleton className="h-12 w-32" />
+                <Skeleton className="h-12 flex-1" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // 7. Handle Error or Not Found
+  if (error || !product) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center">
         <div className="text-center">
@@ -86,7 +75,7 @@ export default function ProductPage() {
             Product Not Found
           </h1>
           <p className="text-muted-foreground mb-6">
-            Sorry, we couldn't find the product you're looking for.
+            {error ? error.message : "Sorry, we couldn't find the product you're looking for."}
           </p>
           <button
             onClick={() => navigate("/")}
@@ -99,15 +88,7 @@ export default function ProductPage() {
     );
   }
 
-  const handleBuyOnPrintful = () => {
-    if (selectedSize) {
-      window.open(
-        `https://www.printful.com`,
-        "_blank"
-      );
-    }
-  };
-
+  // 8. Render the page with live data
   return (
     <main className="min-h-screen bg-background py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -166,7 +147,7 @@ export default function ProductPage() {
             {/* Price */}
             <div className="mb-8">
               <p className="text-5xl font-heading font-bold text-primary">
-                ${product.price.toFixed(2)}
+                ${product.price}
               </p>
             </div>
 
@@ -196,7 +177,7 @@ export default function ProductPage() {
                 Select Size
               </h3>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
-                {SIZES.map((size) => (
+                {product.sizes.map((size) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
